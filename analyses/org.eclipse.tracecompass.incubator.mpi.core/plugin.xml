@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.internal.mpi.core.analysis.MpiCallStackAnalysis"
+            id="org.eclipse.tracecompass.incubator.mpi.core.analysis.callstack"
+            name="Mpi CallStack Analysis">
+         <tracetype
+               applies="true"
+               class="org.eclipse.tracecompass.tmf.ctf.core.trace.CtfTmfTrace">
+         </tracetype>
+      </module>
+   </extension>
+
+</plugin>
