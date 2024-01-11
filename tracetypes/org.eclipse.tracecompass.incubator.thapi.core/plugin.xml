@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.internal.thapi.core.analysis.ThapiCallstackAnalysis"
+            automatic="true"
+            icon="ico/thapi.png"
+            id="org.eclipse.tracecompass.incubator.thapi.analysis.callstack"
+            name="Thapi Callstack">
+         <tracetype
+               applies="true"
+               class="org.eclipse.tracecompass.incubator.internal.thapi.core.trace.ThapiTrace"
+               id="org.eclipse.tracecompass.incubator.thapi.analysis.callstack">
+         </tracetype>
+      </module>
+   </extension>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.tracetype">
+      <type
+            category="org.eclipse.linuxtools.tmf.ctf.core.category.ctf"
+            event_type="org.eclipse.tracecompass.tmf.ctf.core.event.CtfTmfEvent"
+            id="org.eclipse.tracecompass.incubator.thapi.trace"
+            isDirectory="true"
+            name="Thapi CTF"
+            trace_type="org.eclipse.tracecompass.incubator.internal.thapi.core.trace.ThapiTrace">
+      </type>
+   </extension>
+
+</plugin>
