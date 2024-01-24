@@ -11,6 +11,8 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.analysis.os.linux.core.event.aspect.LinuxPidAspect;
 import org.eclipse.tracecompass.analysis.os.linux.core.event.aspect.LinuxTidAspect;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.IGpuTrace;
+import org.eclipse.tracecompass.incubator.gpu.core.trace.IGpuTraceEventLayout;
 import org.eclipse.tracecompass.incubator.internal.thapi.core.Activator;
 import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
 import org.eclipse.tracecompass.tmf.core.event.aspect.ITmfEventAspect;
@@ -21,7 +23,7 @@ import org.eclipse.tracecompass.tmf.ctf.core.trace.CtfTraceValidationStatus;
 /**
  *
  */
-public class ThapiTrace extends CtfTmfTrace {
+public class ThapiTrace extends CtfTmfTrace implements IGpuTrace {
 
     public ThapiTrace() {
         super(new ThapiEventFactory());
@@ -69,7 +71,7 @@ public class ThapiTrace extends CtfTmfTrace {
     }
 
     @Override
-    public @NonNull Iterable<ITmfEventAspect<?>> getEventAspects() {
+    public Iterable<ITmfEventAspect<?>> getEventAspects() {
         Iterable<ITmfEventAspect<?>> oldAspects = super.getEventAspects();
         List<ITmfEventAspect<?>> aspects = new ArrayList<>();
         for (ITmfEventAspect<?> aspect : oldAspects) {
@@ -81,5 +83,10 @@ public class ThapiTrace extends CtfTmfTrace {
         aspects.add(fVtidAspect);
         aspects.add(fBackendAspect);
         return aspects;
+    }
+
+    @Override
+    public @NonNull IGpuTraceEventLayout getGpuTraceEventLayout() {
+        return ThapiTraceLayout.getInstance();
     }
 }
