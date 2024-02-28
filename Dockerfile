@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Polytechnique de Montréal
+# Copyright (c) 2023, 2024 Polytechnique de Montréal
 #
 # All rights reserved. This program and the accompanying materials are made
 # available under the terms of the Eclipse Public License 2.0 which
@@ -41,3 +41,4 @@ COPY --from=packager /app/trace-server/org.eclipse.tracecompass.incubator.trace.
 WORKDIR /usr/src/tracecompass
 EXPOSE 8080
 CMD ["./tracecompass-server"]
+
