@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.handlers;
 
-import org.eclipse.tracecompass.incubator.callstack.core.instrumented.statesystem.InstrumentedCallStackAnalysis;
+import org.eclipse.tracecompass.analysis.profiling.core.instrumented.InstrumentedCallStackAnalysis;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.Activator;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmCallStackStateProvider;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmEventLayout;
