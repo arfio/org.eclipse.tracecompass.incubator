@@ -63,6 +63,11 @@ public class GpuCallStackAnalysis extends InstrumentedCallStackAnalysis {
         return new GpuCallStackStateProvider(Objects.requireNonNull(getTrace()));
     }
 
+    @Override
+    protected StateSystemBackendType getBackendType() {
+        return StateSystemBackendType.PARTIAL;
+    }
+
     private class GpuCallStackStateProvider extends AbstractTmfStateProvider {
 
         private final IGpuTraceEventLayout fLayout;
