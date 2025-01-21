@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +33,7 @@ import org.eclipse.tracecompass.statesystem.core.interval.ITmfStateInterval;
 import org.eclipse.tracecompass.tmf.core.event.TmfEvent;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfAnalysisException;
 import org.eclipse.tracecompass.tmf.core.exceptions.TmfTraceException;
+import org.eclipse.tracecompass.tmf.core.model.filters.TimeQueryFilter;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfContext;
 import org.junit.Test;
 
@@ -84,7 +86,8 @@ public class InstrumentedCallStackArrowsTest {
             ITmfStateSystem ss = analysis.getStateSystem();
             assertNotNull(ss);
 
-            List<@NonNull ITmfStateInterval> actual = analysis.getLinks(ss.getStartTime(), ss.getCurrentEndTime(), new NullProgressMonitor());
+            List<@NonNull Long> times = Arrays.stream(new TimeQueryFilter(ss.getStartTime(), ss.getCurrentEndTime(), 50000).getTimesRequested()).boxed().toList();
+            List<@NonNull ITmfStateInterval> actual = analysis.getLinks(times, new NullProgressMonitor());
 
             assertEqualsEdges("resources/expectedArrows.csv", actual);
         } finally {
@@ -127,7 +130,8 @@ public class InstrumentedCallStackArrowsTest {
             ITmfStateSystem ss = analysis.getStateSystem();
             assertNotNull(ss);
 
-            List<@NonNull ITmfStateInterval> actual = analysis.getLinks(ss.getStartTime(), ss.getCurrentEndTime(), new NullProgressMonitor());
+            List<@NonNull Long> times = Arrays.stream(new TimeQueryFilter(ss.getStartTime(), ss.getCurrentEndTime(), 50).getTimesRequested()).boxed().toList();
+            List<@NonNull ITmfStateInterval> actual = analysis.getLinks(times, new NullProgressMonitor());
 
             assertEqualsEdges("resources/expectedScopeArrows.csv", actual);
         } finally {

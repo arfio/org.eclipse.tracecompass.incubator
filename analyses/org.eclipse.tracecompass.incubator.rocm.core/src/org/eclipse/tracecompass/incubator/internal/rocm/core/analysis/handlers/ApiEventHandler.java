@@ -102,6 +102,9 @@ public class ApiEventHandler implements IRocmEventHandler {
                 depth += 1;
                 subQuark = ssb.getQuarkRelativeAndAdd(operationsQuark, String.valueOf(depth));
             }
+            // Register event tid in the call stack
+            int tidQuark = ssb.getQuarkRelativeAndAdd(subQuark, RocmCallStackStateProvider.TID);
+            ssb.modifyAttribute(ts, event.getContent().getFieldValue(Integer.class, layout.fieldThreadId()), tidQuark);
             // Register event name in the call stack
             ssb.modifyAttribute(ts, correlationId, subQuark);
             int nameQuark = ssb.getQuarkRelativeAndAdd(subQuark, RocmCallStackStateProvider.NAME);

@@ -51,6 +51,7 @@ public class RocmCallStackStateProvider extends AbstractTmfStateProvider {
     public static final String ROOT = "root"; //$NON-NLS-1$
     /** Name of the sub-attribute where the name of the operation is stored */
     public static final String NAME = "name"; //$NON-NLS-1$
+    public static final String TID = "tid";
     /** Name of the sub-attribute where the correlation id is stored */
     public static final String CORRELATION_ID = "correlation_id"; //$NON-NLS-1$
     /** Name of the sub-attribute where the operations are stored */

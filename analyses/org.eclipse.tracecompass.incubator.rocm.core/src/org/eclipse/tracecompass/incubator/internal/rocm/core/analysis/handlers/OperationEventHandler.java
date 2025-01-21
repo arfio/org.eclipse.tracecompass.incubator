@@ -10,8 +10,13 @@
  *******************************************************************************/
 package org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.handlers;
 
+import java.util.List;
+
+import org.eclipse.tracecompass.analysis.os.linux.core.model.HostThread;
+import org.eclipse.tracecompass.analysis.profiling.core.instrumented.EdgeStateValue;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.InstrumentedCallStackAnalysis;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.Activator;
+import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmCallStackAnalysis;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmCallStackStateProvider;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmEventLayout;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystemBuilder;
@@ -132,10 +137,43 @@ public class OperationEventHandler implements IRocmEventHandler {
             depth += 1;
             subQuark = ssb.getQuarkRelative(operationsQuark, String.valueOf(depth));
         }
-        ssb.modifyAttribute(ts, null, subQuark);
+
+        int tidQuark = ssb.getQuarkRelative(subQuark, RocmCallStackStateProvider.TID);
+        int hipOperationTid = ssb.queryOngoingState(tidQuark).unboxInt();
+        addArrows(ssb, hipOperationTid, ssb.getOngoingStartTime(subQuark), event);
+
         int nameQuark = ssb.getQuarkRelative(subQuark, RocmCallStackStateProvider.NAME);
         String hipOperationName = ssb.queryOngoingState(nameQuark).unboxStr();
+
+        // set back to null to remove element from the queue
+        ssb.modifyAttribute(ts, null, tidQuark);
         ssb.modifyAttribute(ts, null, nameQuark);
+        ssb.modifyAttribute(ts, null, subQuark);
         return hipOperationName;
+    }
+
+    private static void addArrows(ITmfStateSystemBuilder ssb, int tid, long srcTime, ITmfEvent destEvent) {
+        // hostid source
+        String hostId = destEvent.getTrace().getHostId();
+        HostThread src = new HostThread(hostId, tid);
+        // hostid destination
+        HostThread dest = new HostThread(destEvent.getTrace().getHostId(), 1);
+        int edgeQuark = getAvailableEdgeQuark(ssb, srcTime);
+        Object edgeStateValue = new EdgeStateValue(0, src, dest);
+        ssb.modifyAttribute(srcTime, edgeStateValue, edgeQuark);
+        ssb.modifyAttribute(destEvent.getTimestamp().getValue(), (Object) null, edgeQuark);
+    }
+
+    private static int getAvailableEdgeQuark(ITmfStateSystemBuilder ssb, Long startTime) {
+        int edgeRoot = ssb.getQuarkAbsoluteAndAdd(RocmCallStackAnalysis.EDGES);
+        List<Integer> subQuarks = ssb.getSubAttributes(edgeRoot, false);
+        for (int quark : subQuarks) {
+            long start = ssb.getOngoingStartTime(quark);
+            Object value = ssb.queryOngoing(quark);
+            if (value == null && start <= startTime) {
+                return quark;
+            }
+        }
+        return ssb.getQuarkRelativeAndAdd(edgeRoot, Integer.toString(subQuarks.size()));
     }
 }

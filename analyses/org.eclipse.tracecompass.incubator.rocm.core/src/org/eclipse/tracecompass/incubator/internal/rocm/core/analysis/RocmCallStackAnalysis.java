@@ -31,7 +31,7 @@ import org.eclipse.tracecompass.tmf.core.statesystem.ITmfStateProvider;
  */
 public class RocmCallStackAnalysis extends InstrumentedCallStackAnalysis {
 
-    private static final String EDGES = "EDGES"; //$NON-NLS-1$
+    public static final String EDGES = "EDGES"; //$NON-NLS-1$
 
     @Override
     protected @NonNull Collection<Integer> getEdgeQuarks() {
