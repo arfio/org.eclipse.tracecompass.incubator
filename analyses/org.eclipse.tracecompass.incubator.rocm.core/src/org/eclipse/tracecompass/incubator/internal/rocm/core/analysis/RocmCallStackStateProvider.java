@@ -73,7 +73,7 @@ public class RocmCallStackStateProvider extends AbstractTmfStateProvider {
         super(trace, ID);
         fLayout = layout;
         fApiEventHandler = new ApiEventHandler();
-        fOperationEventHandler = new OperationEventHandler();
+        fOperationEventHandler = new OperationEventHandler((ApiEventHandler) fApiEventHandler);
     }
 
     @Override

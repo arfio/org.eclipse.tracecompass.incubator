@@ -31,6 +31,7 @@ public class RocmEventLayout {
 
     private static final String HIP_LAUNCH_PREFIX = "hipLaunch"; //$NON-NLS-1$
     private static final String HIP_EXT_LAUNCH_PREFIX = "hipExtLaunch"; //$NON-NLS-1$
+    private static final String HIP_EXT_MODULE_LAUNCH_PREFIX = "hipExtModuleLaunch";
     private static final String HIP_MEMCPY_PREFIX = "hipMemcpy"; //$NON-NLS-1$
     private static final String HIP_MEMCPY_BEGIN = "hipMemcpyBegin"; //$NON-NLS-1$
     private static final String HIP_MEMCPY_END = "hipMemcpyEnd"; //$NON-NLS-1$
@@ -38,6 +39,14 @@ public class RocmEventLayout {
     private static final String HIP_LAUNCH_KERNEL_END = "hipLaunchKernelEnd"; //$NON-NLS-1$
     private static final String HIP_STREAM_SYNCHRONIZE_BEGIN = "hipStreamSynchronizeBegin"; //$NON-NLS-1$
     private static final String HIP_STREAM_SYNCHRONIZE_END = "hipStreamSynchronizeEnd"; //$NON-NLS-1$
+    private static final String HIP_STREAM_WAIT_EVENT_BEGIN = "hipStreamWaitEventBegin";
+    private static final String HIP_STREAM_WAIT_EVENT_END = "hipStreamWaitEventEnd";
+    private static final String HIP_SET_DEVICE_BEGIN = "hipSetDeviceBegin";
+    private static final String HIP_GET_DEVICE_BEGIN = "hipGetDeviceBegin";
+    private static final String HIP_GET_LAST_ERROR_BEGIN = "hipGetLastErrorBegin";
+    private static final String HIP_EVENT_QUERY_BEGIN = "hipEventQueryBegin";
+    private static final String HIP_MEMSET_ASYNC_PREFIX = "hipMemsetAsyncBegin";
+
 
     private static final String HSA_HANDLE_TYPE = "hsa_handle_type"; //$NON-NLS-1$
 
@@ -117,6 +126,24 @@ public class RocmEventLayout {
      */
     public String hipStreamSynchronizeEnd() {
         return HIP_STREAM_SYNCHRONIZE_END;
+    }
+
+    /**
+     * TODO
+     *
+     * @return the event name
+     */
+    public String hipStreamWaitEventBegin() {
+        return HIP_STREAM_WAIT_EVENT_BEGIN;
+    }
+
+    /**
+     * TODO
+     *
+     * @return the event name
+     */
+    public String hipStreamWaitEventEnd() {
+        return HIP_STREAM_WAIT_EVENT_END;
     }
 
     /**
@@ -223,6 +250,23 @@ public class RocmEventLayout {
         return HSA_HANDLE_TYPE;
     }
 
+    public boolean isNotLinkedToOperation(String eventName) {
+        return eventName.equals(HIP_SET_DEVICE_BEGIN) ||
+                eventName.equals(HIP_GET_DEVICE_BEGIN) ||
+                eventName.equals(HIP_GET_LAST_ERROR_BEGIN) ||
+                eventName.equals(HIP_EVENT_QUERY_BEGIN);
+    }
+
+    public boolean isLinkedToOperation(String eventName) {
+        return eventName.equals(HIP_STREAM_SYNCHRONIZE_BEGIN) ||
+                eventName.equals(HIP_STREAM_WAIT_EVENT_BEGIN) ||
+                eventName.startsWith("hipMemset") ||
+                eventName.startsWith(HIP_MEMSET_ASYNC_PREFIX) ||
+                eventName.startsWith("hipStreamDestroy") ||
+                isMemcpyBegin(eventName) ||
+                isLaunchBegin(eventName);
+    }
+
     /**
      * This event is a call that will result in a memory copy between the host
      * and a device or between two devices.
@@ -244,7 +288,10 @@ public class RocmEventLayout {
      * @return whether the event corresponds to a kernel launch
      */
     public boolean isLaunchBegin(String eventName) {
-        return (eventName.startsWith(HIP_LAUNCH_PREFIX) || eventName.startsWith(HIP_EXT_LAUNCH_PREFIX)) && eventName.endsWith(HIP_BEGIN_SUFFIX);
+        return (eventName.startsWith(HIP_LAUNCH_PREFIX) ||
+                eventName.startsWith(HIP_EXT_LAUNCH_PREFIX) ||
+                eventName.startsWith(HIP_EXT_MODULE_LAUNCH_PREFIX) ||
+                eventName.startsWith("hipModuleLaunchKernel")) && eventName.endsWith(HIP_BEGIN_SUFFIX);
     }
 
     // ------------------------------------------------------------------------

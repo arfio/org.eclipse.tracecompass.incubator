@@ -11,7 +11,9 @@
 package org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.handlers;
 
 import java.util.List;
+import java.util.Objects;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.analysis.os.linux.core.model.HostThread;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.EdgeStateValue;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.InstrumentedCallStackAnalysis;
@@ -36,7 +38,13 @@ public class OperationEventHandler implements IRocmEventHandler {
     private static final String QUEUES = "Queues"; //$NON-NLS-1$
     private static final String ROCM_AGENT = "ROCm Agent "; //$NON-NLS-1$
     private static final String QUEUE = "Queue "; //$NON-NLS-1$
-    private static final String UNKNOWN = "Unknown Operation"; //$NON-NLS-1$
+//    private static final String UNKNOWN = "Unknown Operation"; //$NON-NLS-1$
+
+    private final ApiEventHandler fApiHandler;
+
+    public OperationEventHandler(ApiEventHandler apiHandler) {
+        fApiHandler = apiHandler;
+    }
 
     @Override
     public void handleEvent(ITmfEvent event, ITmfStateSystemBuilder ssb, RocmEventLayout layout) {
@@ -44,17 +52,15 @@ public class OperationEventHandler implements IRocmEventHandler {
         boolean isHipOperationBegin = event.getName().equals(layout.getHipOperationBegin());
         boolean isHipOperationEnd = event.getName().equals(layout.getHipOperationEnd());
         if (isHipOperationBegin || isHipOperationEnd) {
-            String operationName = ""; //$NON-NLS-1$
-            if (isHipOperationBegin) {
+            /*if (isHipOperationBegin) {
                 try {
-                    operationName = getCorrespondingHipCall(event, ssb, layout);
-                    if (operationName.equals("")) { //$NON-NLS-1$
-                        operationName = event.getContent().getFieldValue(String.class, layout.fieldOperationName());
-                    }
+                    operationName = event.getContent().getFieldValue(String.class, layout.fieldOperationName());
+                    String operationNameCorrelation = getCorrespondingHipCall(event, ssb, layout);
+                    operationName = operationName == "" ? operationNameCorrelation : operationName;
                 } catch (AttributeNotFoundException e) {
                     Activator.getInstance().logError(e.getMessage());
                 }
-            }
+            }*/
             // Create or find call stack quark
             Integer agentId = event.getContent().getFieldValue(Integer.class, layout.fieldAgentId());
             Integer queueId = event.getContent().getFieldValue(Integer.class, layout.fieldQueueId());
@@ -65,6 +71,10 @@ public class OperationEventHandler implements IRocmEventHandler {
             int rootQuark = ssb.getQuarkAbsoluteAndAdd(RocmCallStackStateProvider.ROOT, QUEUES);
             int agentQuark = ssb.getQuarkRelativeAndAdd(rootQuark, ROCM_AGENT + agentId.toString());
             int queueQuark = ssb.getQuarkRelativeAndAdd(agentQuark, QUEUE + queueId.toString());
+            if (ssb.queryOngoing(queueQuark) == null) {
+                ssb.modifyAttribute(event.getTimestamp().getValue(), getGpuQueueId(agentId, queueId), queueQuark);
+//                ssb.modifyAttribute(event.getTimestamp().getValue(), getGpuQueueId(agentId, queueId), agentQuark);
+            }
             int callStackQuark = ssb.getQuarkRelativeAndAdd(queueQuark, InstrumentedCallStackAnalysis.CALL_STACK);
 
             // Add the operation to the queue if we are treating a begin event
@@ -77,7 +87,15 @@ public class OperationEventHandler implements IRocmEventHandler {
                     subQuark = ssb.getQuarkRelativeAndAdd(callStackQuark, String.valueOf(depth));
                 }
                 // Register event name in the call stack
-                ssb.modifyAttribute(timestamp, operationName, subQuark);
+                ITmfEvent srcEvent = fApiHandler.getEventFromCorrelationCache(correlationId);
+                if (srcEvent != null) {
+                    Integer tid = srcEvent.getContent().getFieldValue(Integer.class, layout.fieldThreadId());
+                    addArrows(ssb, (tid != null ? tid : 0), srcEvent.getTimestamp().getValue(), event, getGpuQueueId(agentId, queueId));
+                } else {
+                    Activator.getInstance().logWarning("Not found correlation for id: " + correlationId);
+                }
+                String operationName = getOperationNameFromSrcEvent(event, srcEvent, layout);
+                ssb.modifyAttribute(timestamp, operationName + ":" + correlationId.toString(), subQuark);
                 // Set call stack depth
                 ssb.modifyAttribute(timestamp, depth, callStackQuark);
                 // Set correlation id
@@ -117,12 +135,26 @@ public class OperationEventHandler implements IRocmEventHandler {
                         ssb.modifyAttribute(timestamp, nextCorrelationId, ssb.getQuarkRelativeAndAdd(previousQuark, RocmCallStackStateProvider.CORRELATION_ID));
                     }
                 } catch (AttributeNotFoundException e) {
-                    e.printStackTrace();
+                    Activator.getInstance().logError("The correlation id was not found on the queue: " + correlationId);
                 }
             }
         }
     }
 
+    private static String getOperationNameFromSrcEvent(ITmfEvent operationEvent, @Nullable ITmfEvent srcEvent, RocmEventLayout layout) {
+        String operationName = operationEvent.getContent().getFieldValue(String.class, layout.fieldOperationName());
+        if (operationName != null && operationName.equals("") && srcEvent != null) {
+            if (layout.isMemcpyBegin(srcEvent.getName())) {
+                operationName = srcEvent.getContent().getFieldValue(String.class, layout.fieldMemcpyKind());
+            } else if (srcEvent.getName().equals(layout.hipLaunchKernelBegin())) {
+                operationName = srcEvent.getContent().getFieldValue(String.class, layout.fieldKernelName());
+            } else {
+                operationName = srcEvent.getName().substring(0, srcEvent.getName().length() - layout.getHipBeginSuffix().length());
+            }
+        }
+        return operationName;
+    }
+/*
     private static String getCorrespondingHipCall(ITmfEvent event, ITmfStateSystemBuilder ssb, RocmEventLayout layout) throws AttributeNotFoundException {
         Long correlationId = event.getContent().getFieldValue(Long.class, layout.fieldCorrelationId());
         if (correlationId == null) {
@@ -140,7 +172,10 @@ public class OperationEventHandler implements IRocmEventHandler {
 
         int tidQuark = ssb.getQuarkRelative(subQuark, RocmCallStackStateProvider.TID);
         int hipOperationTid = ssb.queryOngoingState(tidQuark).unboxInt();
-        addArrows(ssb, hipOperationTid, ssb.getOngoingStartTime(subQuark), event);
+
+        Integer agentId = event.getContent().getFieldValue(Integer.class, layout.fieldAgentId());
+        Integer queueId = event.getContent().getFieldValue(Integer.class, layout.fieldQueueId());
+        addArrows(ssb, hipOperationTid, ssb.getOngoingStartTime(subQuark), event, getGpuQueueId(agentId, queueId));
 
         int nameQuark = ssb.getQuarkRelative(subQuark, RocmCallStackStateProvider.NAME);
         String hipOperationName = ssb.queryOngoingState(nameQuark).unboxStr();
@@ -151,13 +186,17 @@ public class OperationEventHandler implements IRocmEventHandler {
         ssb.modifyAttribute(ts, null, subQuark);
         return hipOperationName;
     }
+*/
+    private static int getGpuQueueId(Integer agentId, Integer queueId) {
+        return Objects.hash(agentId, queueId);
+    }
 
-    private static void addArrows(ITmfStateSystemBuilder ssb, int tid, long srcTime, ITmfEvent destEvent) {
+    private static void addArrows(ITmfStateSystemBuilder ssb, int tid, long srcTime, ITmfEvent destEvent, int gpuQueueId) {
         // hostid source
         String hostId = destEvent.getTrace().getHostId();
         HostThread src = new HostThread(hostId, tid);
         // hostid destination
-        HostThread dest = new HostThread(destEvent.getTrace().getHostId(), 1);
+        HostThread dest = new HostThread(destEvent.getTrace().getHostId(), gpuQueueId);
         int edgeQuark = getAvailableEdgeQuark(ssb, srcTime);
         Object edgeStateValue = new EdgeStateValue(0, src, dest);
         ssb.modifyAttribute(srcTime, edgeStateValue, edgeQuark);

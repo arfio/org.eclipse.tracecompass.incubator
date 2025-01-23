@@ -10,14 +10,16 @@
  *******************************************************************************/
 package org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.handlers;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack.CallStackStateProvider;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.InstrumentedCallStackAnalysis;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmCallStackStateProvider;
 import org.eclipse.tracecompass.incubator.internal.rocm.core.analysis.RocmEventLayout;
-import org.eclipse.tracecompass.incubator.rocm.core.ctfplugin.trace.RocmCtfPluginTrace;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystemBuilder;
-import org.eclipse.tracecompass.statesystem.core.exceptions.AttributeNotFoundException;
 import org.eclipse.tracecompass.tmf.core.event.ITmfEvent;
 
 /**
@@ -32,13 +34,26 @@ public class ApiEventHandler implements IRocmEventHandler {
 
     private static final String HIP = "HIP"; //$NON-NLS-1$
     private static final String HSA = "HSA"; //$NON-NLS-1$
+    private static final Integer MAX_ENTRIES = 2000;
+    private static Long fSmallestCorrelationId = 0L;
+    private final Map<Long, ITmfEvent> fCorrelationCache = new HashMap<>(MAX_ENTRIES+1, .75F) {
+        private static final long serialVersionUID = 6811157191976376628L;
 
-    private boolean fIsThreadIdProvidedHSA = false;
-    private boolean fIsThreadIdProvidedHIP = false;
+        // This method is called just after a new entry has been added
+        @SuppressWarnings("null")
+        public ITmfEvent put(Long key, ITmfEvent value) {
+            while (size() > MAX_ENTRIES) {
+                super.remove(fSmallestCorrelationId++);
+            }
+            return super.put(key, value);
+        }
+    };
 
-    private static void provideThreadId(ITmfEvent event, ITmfStateSystemBuilder ssb, int quark, RocmEventLayout layout) {
-        Integer tid = event.getContent().getFieldValue(Integer.class, layout.fieldThreadId());
-        ssb.modifyAttribute(event.getTimestamp().getValue(), tid, quark);
+    private static void provideThreadIdIfNotProvided(ITmfEvent event, ITmfStateSystemBuilder ssb, int quark, RocmEventLayout layout) {
+        if (ssb.queryOngoing(quark) == null) {
+            Integer tid = event.getContent().getFieldValue(Integer.class, layout.fieldThreadId());
+            ssb.modifyAttribute(event.getTimestamp().getValue(), tid, quark);
+        }
     }
 
     @Override
@@ -49,7 +64,7 @@ public class ApiEventHandler implements IRocmEventHandler {
         }
         int rootQuark = ssb.getQuarkAbsoluteAndAdd(RocmCallStackStateProvider.ROOT, CallStackStateProvider.PROCESSES);
         int processQuark = ssb.getQuarkRelativeAndAdd(rootQuark, tid.toString());
-        addEventToOperationQueue(event, ssb, layout);
+//        addEventToOperationQueue(event, ssb, layout);
         boolean isEndEvent = false;
 
         int callStackQuark = ITmfStateSystem.INVALID_ATTRIBUTE;
@@ -57,11 +72,11 @@ public class ApiEventHandler implements IRocmEventHandler {
             int apiQuark = ssb.getQuarkRelativeAndAdd(processQuark, HIP);
             callStackQuark = ssb.getQuarkRelativeAndAdd(apiQuark, InstrumentedCallStackAnalysis.CALL_STACK);
             isEndEvent = event.getName().endsWith(layout.getHipEndSuffix());
-            if (!fIsThreadIdProvidedHIP) {
-                provideThreadId(event, ssb, processQuark, layout);
-                provideThreadId(event, ssb, apiQuark, layout);
-                fIsThreadIdProvidedHIP = true;
+            if (!isEndEvent) {
+                addEventToCorrelationCache(event, layout);
             }
+            provideThreadIdIfNotProvided(event, ssb, apiQuark, layout);
+
         } else if (event.getName().startsWith(layout.getHsaPrefix())) {
             if (event.getName().equals(layout.getHsaHandleType())) {
                 return;
@@ -69,11 +84,7 @@ public class ApiEventHandler implements IRocmEventHandler {
             int apiQuark = ssb.getQuarkRelativeAndAdd(processQuark, HSA);
             callStackQuark = ssb.getQuarkRelativeAndAdd(apiQuark, InstrumentedCallStackAnalysis.CALL_STACK);
             isEndEvent = event.getName().endsWith(layout.getHsaEndSuffix());
-            if (!fIsThreadIdProvidedHSA) {
-                provideThreadId(event, ssb, processQuark, layout);
-                provideThreadId(event, ssb, apiQuark, layout);
-                fIsThreadIdProvidedHSA = true;
-            }
+            provideThreadIdIfNotProvided(event, ssb, apiQuark, layout);
         }
         if (isEndEvent) {
             ssb.popAttribute(event.getTimestamp().getValue(), callStackQuark);
@@ -85,6 +96,29 @@ public class ApiEventHandler implements IRocmEventHandler {
         ssb.pushAttribute(event.getTimestamp().getValue(), eventName, callStackQuark);
     }
 
+    private void addEventToCorrelationCache(ITmfEvent event, RocmEventLayout layout) {
+        if (layout.isLinkedToOperation(event.getName())) {
+            Long correlationId = event.getContent().getFieldValue(Long.class, layout.fieldCorrelationId());
+            if (correlationId == null) {
+                return;
+            }
+            fCorrelationCache.put(correlationId, event);
+        }
+    }
+
+    public @Nullable ITmfEvent getEventFromCorrelationCache(Long correlationId) {
+        return fCorrelationCache.remove(correlationId);
+    }
+
+/*
+    private static boolean isLinkedToGpuOperationStartEvent(ITmfEvent event, RocmEventLayout layout) {
+        return event.getName().equals(layout.hipStreamSynchronizeBegin()) || event.getName().equals(layout.hipStreamWaitEventBegin());
+    }
+
+    private static boolean isLinkedToGpuOperationEndEvent(ITmfEvent event, RocmEventLayout layout) {
+        return event.getName().equals(layout.hipStreamSynchronizeEnd()) || event.getName().equals(layout.hipStreamWaitEventEnd());
+    }
+
     private static void addEventToOperationQueue(ITmfEvent event, ITmfStateSystemBuilder ssb, RocmEventLayout layout) {
         Long correlationId = event.getContent().getFieldValue(Long.class, layout.fieldCorrelationId());
         if (correlationId == null) {
@@ -94,7 +128,7 @@ public class ApiEventHandler implements IRocmEventHandler {
         long ts = event.getTimestamp().getValue();
 
         if (layout.isMemcpyBegin(event.getName()) || (event.getName().equals(layout.hipLaunchKernelBegin()) && ((RocmCtfPluginTrace) event.getTrace()).isContainingKernelGpuActivity())
-                || event.getName().equals(layout.hipStreamSynchronizeBegin())) {
+                || isLinkedToGpuOperationStartEvent(event, layout)) {
             int depth = 1;
             int subQuark = ssb.getQuarkRelativeAndAdd(operationsQuark, String.valueOf(depth));
             // While there is already activity on the quark
@@ -116,7 +150,7 @@ public class ApiEventHandler implements IRocmEventHandler {
                 ssb.modifyAttribute(ts, event.getName().substring(0, event.getName().length() - layout.getHipBeginSuffix().length()), nameQuark);
             }
         }
-        if (event.getName().equals(layout.hipStreamSynchronizeEnd())) {
+        if (isLinkedToGpuOperationEndEvent(event, layout)) {
             int depth = 1;
             int subQuark;
             try {
@@ -132,9 +166,11 @@ public class ApiEventHandler implements IRocmEventHandler {
                 ssb.modifyAttribute(ts, null, subQuark);
                 int nameQuark = ssb.getQuarkRelative(subQuark, RocmCallStackStateProvider.NAME);
                 ssb.modifyAttribute(ts, null, nameQuark);
+                int tidQuark = ssb.getQuarkRelative(subQuark, RocmCallStackStateProvider.TID);
+                ssb.modifyAttribute(ts, null, tidQuark);
             } catch (AttributeNotFoundException e) {
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 }

@@ -15,6 +15,9 @@ import java.util.Collections;
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackSeries;
+import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackSeries.IThreadIdResolver;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.InstrumentedCallStackAnalysis;
 import org.eclipse.tracecompass.statesystem.core.ITmfStateSystem;
 import org.eclipse.tracecompass.tmf.core.statesystem.ITmfStateProvider;
@@ -49,5 +52,10 @@ public class RocmCallStackAnalysis extends InstrumentedCallStackAnalysis {
     @Override
     protected @NonNull ITmfStateProvider createStateProvider() {
         return new RocmCallStackStateProvider(Objects.requireNonNull(getTrace()), new RocmEventLayout());
+    }
+
+    @Override
+    protected @Nullable IThreadIdResolver getCallStackTidResolver() {
+        return new CallStackSeries.AttributeValueThreadResolver(0);
     }
 }
