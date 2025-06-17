@@ -19,6 +19,14 @@
             name="RocmCtfPlugin Trace"
             trace_type="org.eclipse.tracecompass.incubator.rocm.core.ctfplugin.trace.RocmCtfPluginTrace">
       </type>
+      <type
+            category="org.eclipse.linuxtools.tmf.ctf.core.category.ctf"
+            event_type="org.eclipse.tracecompass.incubator.rocm.core.rocprofv3.Rocprofv3Event"
+            id="org.eclipse.tracecompass.incubator.rocm.core.rocprofv3"
+            isDirectory="true"
+            name="Rocprofv3 trace"
+            trace_type="org.eclipse.tracecompass.incubator.rocm.core.rocprofv3.Rocprofv3Trace">
+      </type>
    </extension>
    <extension
          point="org.eclipse.linuxtools.tmf.core.analysis">
