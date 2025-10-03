@@ -1,0 +1,17 @@
+<plugin
+>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.concurrentcallstack.core.SpanFlameAnalysis"
+            id="org.eclipse.tracecompass.incubator.concurrentcallstack.callstack"
+            name="ConcurrentLttngUstCallStack">
+                     <tracetype
+               class="org.eclipse.tracecompass.lttng2.ust.core.trace.LttngUstTrace">
+         </tracetype>
+            
+      </module>
+   </extension>
+</plugin>
+
+

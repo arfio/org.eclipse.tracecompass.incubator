@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            category="org.eclipse.linuxtools.lttng2.ui.views.category"
+            class="org.eclipse.tracecompass.analysis.timing.ui.views.segmentstore.table.SegmentStoreTableView"
+            id="org.eclipse.tracecompass.analysis.timing.ui.segstore.table:org.eclipse.tracecompass.incubator.spanmetrics"
+            name="%spanMetrics.table.view.name"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+      <output
+            class="org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput"
+            id="org.eclipse.tracecompass.analysis.timing.ui.segstore.table:org.eclipse.tracecompass.incubator.spanmetrics">
+         <analysisModuleClass
+               class="org.eclipse.tracecompass.incubator.spanmetrics.core.SpanMetricsAnalysis">
+         </analysisModuleClass>
+      </output>
+   </extension>
+</plugin>

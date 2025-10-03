@@ -42,7 +42,6 @@ import org.eclipse.tracecompass.incubator.analysis.core.weighted.tree.diff.Diffe
 import org.eclipse.tracecompass.incubator.analysis.core.weighted.tree.diff.DifferentialWeightedTreeProvider;
 import org.eclipse.tracecompass.incubator.analysis.core.weighted.tree.diff.WeightedTreeUtils;
 import org.eclipse.tracecompass.internal.analysis.profiling.core.callgraph2.AggregatedCalledFunction;
-import org.eclipse.tracecompass.tmf.core.analysis.IAnalysisModule;
 import org.eclipse.tracecompass.tmf.core.analysis.TmfAbstractAnalysisModule;
 import org.eclipse.tracecompass.tmf.core.signal.TmfSignalHandler;
 import org.eclipse.tracecompass.tmf.core.signal.TmfSignalManager;
@@ -51,7 +50,6 @@ import org.eclipse.tracecompass.tmf.core.timestamp.TmfTimestamp;
 import org.eclipse.tracecompass.tmf.core.trace.ITmfTrace;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceManager;
 import org.eclipse.tracecompass.tmf.core.trace.TmfTraceUtils;
-import org.eclipse.tracecompass.tmf.core.trace.experiment.TmfExperiment;
 import org.eclipse.tracecompass.traceeventlogger.LogUtils.ScopeLog;
 
 import com.google.common.collect.Iterables;
@@ -364,17 +362,17 @@ public class DifferentialSeqCallGraphAnalysis extends TmfAbstractAnalysisModule 
 
     @Override
     public boolean canExecute(ITmfTrace trace) {
-        if (trace instanceof TmfExperiment) {
-            for (ITmfTrace individualTrace : ((TmfExperiment) trace).getTraces()) {
-                Iterable<IAnalysisModule> modules = individualTrace.getAnalysisModules();
-                for (IAnalysisModule module : modules) {
-                    if (fCallStackAnalysisMap.containsValue(module.getId())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+//        if (trace instanceof TmfExperiment) {
+//            for (ITmfTrace individualTrace : ((TmfExperiment) trace).getTraces()) {
+//                Iterable<IAnalysisModule> modules = individualTrace.getAnalysisModules();
+//                for (IAnalysisModule module : modules) {
+//                    if (fCallStackAnalysisMap.containsValue(module.getId())) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+        return true;
     }
 
     @Override

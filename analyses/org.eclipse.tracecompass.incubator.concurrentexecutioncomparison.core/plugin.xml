@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+      <module
+            analysis_module="org.eclipse.tracecompass.incubator.concurrentexecutioncomparison.core.ExecutionComparisonSegmentStoreAnalysis"
+            id="org.eclipse.tracecompass.incubator.concurrentexecutioncomparison.core.exeComparison"
+            name="Concurrent Execution Comparison">
+         <tracetype
+               class="org.eclipse.tracecompass.lttng2.ust.core.trace.LttngUstTrace">
+         </tracetype>
+      </module>
+   </extension>
+     
+</plugin>

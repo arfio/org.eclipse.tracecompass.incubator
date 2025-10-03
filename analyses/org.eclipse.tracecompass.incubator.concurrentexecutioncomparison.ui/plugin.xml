@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+
+      <view
+            category="org.eclipse.linuxtools.tmf.ui.views.category"
+            class="org.eclipse.tracecompass.incubator.internal.concurrentexecutioncomparison.ui.ExecutionComparisonView"
+            id="org.eclipse.tracecompass.incubator.internal.concurrentexecutioncomparison.ui.execComparison"
+            name="Concurrent Execution Comparison"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.linuxtools.tmf.core.analysis">
+
+      <output
+            class="org.eclipse.tracecompass.tmf.ui.analysis.TmfAnalysisViewOutput"
+            id="org.eclipse.tracecompass.incubator.internal.concurrentexecutioncomparison.ui.execComparison">
+         <analysisModuleClass
+               class="org.eclipse.tracecompass.incubator.concurrentexecutioncomparison.core.ExecutionComparisonSegmentStoreAnalysis">
+         </analysisModuleClass>
+      </output>
+    </extension>
+      
+</plugin>
