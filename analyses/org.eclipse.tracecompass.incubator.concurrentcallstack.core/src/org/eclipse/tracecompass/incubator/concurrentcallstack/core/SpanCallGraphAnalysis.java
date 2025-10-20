@@ -14,22 +14,25 @@ package org.eclipse.tracecompass.incubator.concurrentcallstack.core;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.tracecompass.analysis.profiling.core.base.ICallStackElement;
 import org.eclipse.tracecompass.analysis.profiling.core.base.ICallStackSymbol;
 import org.eclipse.tracecompass.analysis.profiling.core.callgraph.CallGraph;
+import org.eclipse.tracecompass.analysis.profiling.core.callgraph.ICalledFunction;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStack;
+import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackHostUtils.IHostIdProvider;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackSeries;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackSymbolFactory;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.IFlameChartProvider;
 import org.eclipse.tracecompass.analysis.profiling.core.model.IHostModel;
 import org.eclipse.tracecompass.incubator.internal.concurrentcallstack.core.SpanAbstractCalledFunction;
 import org.eclipse.tracecompass.incubator.internal.concurrentcallstack.core.SpanAggregatedCalledFunction;
-import org.eclipse.tracecompass.internal.analysis.profiling.core.callgraph.ICalledFunction;
 import org.eclipse.tracecompass.internal.analysis.profiling.core.callgraph2.CallGraphAnalysis;
 import org.eclipse.tracecompass.internal.analysis.profiling.core.instrumented.InstrumentedCallStackElement;
+import org.eclipse.tracecompass.internal.analysis.profiling.core.model.ModelManager;
 import org.eclipse.tracecompass.internal.analysis.profiling.core.model.ProcessStatusInterval;
 import org.eclipse.tracecompass.tmf.core.signal.TmfSignalManager;
 
@@ -45,6 +48,7 @@ public class SpanCallGraphAnalysis extends CallGraphAnalysis {
     public static final String Span = "span:";
     public static final String parentSpan = "parentSpan:";
     public static final String func = "opName:";
+    private final IFlameChartProvider fCsProvider;
 
 
 
@@ -52,20 +56,23 @@ public class SpanCallGraphAnalysis extends CallGraphAnalysis {
 
     public SpanCallGraphAnalysis(IFlameChartProvider csProvider) {
         super(csProvider);
-        // TODO Auto-generated constructor stub
+        fCsProvider = csProvider;
     }
 
     @Override
-    protected boolean iterateOverCallstackSerie(CallStackSeries callstackSerie, IHostModel model, CallGraph callgraph, long start, long end, IProgressMonitor monitor) {
+    protected void iterateOverCallstackSerie(CallStackSeries callstackSerie, CallGraph callgraph, long start, long end, IProgressMonitor monitor) {
         // The root elements are the same as the one from the callstack series
         Collection<ICallStackElement> rootElements = callstackSerie.getRootElements();
         for (ICallStackElement element : rootElements) {
             if (monitor.isCanceled()) {
-                return false;
+                return;
             }
+            IFlameChartProvider callstackModule = fCsProvider;
+            IHostIdProvider hostIdProvider = Objects.requireNonNull(callstackModule.getHostIdResolver().apply(element));
+            IHostModel model = ModelManager.getModelFor(hostIdProvider.apply(start));
+
             iterateOverElement(element, model, callgraph, start, end, monitor);
         }
-        return true;
     }
 
     private void iterateOverElement(ICallStackElement element, IHostModel model, CallGraph callgraph, long start, long end, IProgressMonitor monitor) {

@@ -53,7 +53,6 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
@@ -67,7 +66,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.tracecompass.analysis.profiling.core.callgraph.ICallGraphProvider;
+import org.eclipse.tracecompass.analysis.profiling.core.callgraph.ICallGraphProvider2;
 import org.eclipse.tracecompass.analysis.profiling.core.tree.IWeightedTreeGroupDescriptor;
 import org.eclipse.tracecompass.analysis.profiling.core.tree.IWeightedTreeProvider;
 import org.eclipse.tracecompass.common.core.NonNullUtils;
@@ -156,7 +155,7 @@ public class DifferentialFlameGraphView extends TmfView {
     public DifferentialCallGraphAnalysis fAnalysisModule;
     ITimeGraphDataProvider<@NonNull TimeGraphEntryModel> fdataProviderGroup = null;
 
-    private static final @NonNull String SYMBOL_MAPPING_ICON_PATH = "icons/obj16/binaries_obj.gif"; //$NON-NLS-1$
+//    private static final @NonNull String SYMBOL_MAPPING_ICON_PATH = "icons/obj16/binaries_obj.gif"; //$NON-NLS-1$
 
     private static final String SORT_OPTION_KEY = "sort.option"; //$NON-NLS-1$
 
@@ -360,13 +359,13 @@ public class DifferentialFlameGraphView extends TmfView {
      *
      * @return The call graph provider modules
      */
-    protected Iterable<ICallGraphProvider> getCallgraphModules() {
+    protected Iterable<ICallGraphProvider2> getCallgraphModules() {
         ITmfTrace trace = fTrace;
         if (trace == null) {
             return null;
         }
         String analysisId = NonNullUtils.nullToEmptyString(getViewSite().getSecondaryId());
-        Iterable<ICallGraphProvider> modules = TmfTraceUtils.getAnalysisModulesOfClass(trace, ICallGraphProvider.class);
+        Iterable<ICallGraphProvider2> modules = TmfTraceUtils.getAnalysisModulesOfClass(trace, ICallGraphProvider2.class);
         return StreamSupport.stream(modules.spliterator(), false)
                 .filter(m -> {
                     if (m instanceof IAnalysisModule) {
@@ -1359,12 +1358,12 @@ public class DifferentialFlameGraphView extends TmfView {
                         menu.dispose();
                     }
                     menu = new Menu(parent);
-                    Iterable<ICallGraphProvider> callgraphModules = getCallgraphModules();
-                    Iterator<ICallGraphProvider> iterator = callgraphModules.iterator();
+                    Iterable<ICallGraphProvider2> callgraphModules = getCallgraphModules();
+                    Iterator<ICallGraphProvider2> iterator = callgraphModules.iterator();
                     if (!iterator.hasNext()) {
                         return menu;
                     }
-                    ICallGraphProvider provider = iterator.next();
+                    ICallGraphProvider2 provider = iterator.next();
                     // Add the all group element
                     Action allGroupAction = createActionForGroup(AllGroupDescriptor.getInstance());
                     new ActionContributionItem(allGroupAction).fill(menu, -1);
@@ -1508,7 +1507,7 @@ public class DifferentialFlameGraphView extends TmfView {
         };
 
         fConfigureSymbolsAction.setToolTipText(Messages.FlameGraphView_ConfigureSymbolProvidersTooltip);
-        fConfigureSymbolsAction.setImageDescriptor(Activator.getDefault().getImageDescripterFromPath(SYMBOL_MAPPING_ICON_PATH));
+//        fConfigureSymbolsAction.setImageDescriptor(Activator.getDefault().getImageDescripterFromPath(SYMBOL_MAPPING_ICON_PATH));
 
         /*
          * The updateConfigureSymbolsAction() method (called by refresh()) will

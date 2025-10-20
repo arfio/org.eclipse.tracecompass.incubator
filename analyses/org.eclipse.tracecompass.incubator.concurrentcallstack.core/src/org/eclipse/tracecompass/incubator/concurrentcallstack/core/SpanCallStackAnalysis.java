@@ -74,6 +74,7 @@ import org.eclipse.tracecompass.analysis.profiling.core.callgraph.CallGraph;
 import org.eclipse.tracecompass.analysis.profiling.core.callgraph.ICallGraphProvider2;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack.CallStackStateProvider;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackHostUtils;
+import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackHostUtils.IHostIdResolver;
 import org.eclipse.tracecompass.analysis.profiling.core.callstack2.CallStackHostUtils.TraceHostIdResolver;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.EdgeStateValue;
 import org.eclipse.tracecompass.analysis.profiling.core.instrumented.IFlameChartProvider;
@@ -205,12 +206,8 @@ public abstract class SpanCallStackAnalysis extends TmfConcurrentStateSystemAnal
     }
 
     @Override
-    public @NonNull String getHostId() {
-        ITmfTrace trace = getTrace();
-        if (trace == null) {
-            return ""; //$NON-NLS-1$
-        }
-        return trace.getHostId();
+    public @NonNull IHostIdResolver getHostIdResolver() {
+        return new CallStackHostUtils.TraceHostIdResolver(getTrace());
     }
 
     /**

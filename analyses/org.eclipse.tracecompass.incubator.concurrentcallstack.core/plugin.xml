@@ -4,6 +4,7 @@
          point="org.eclipse.linuxtools.tmf.core.analysis">
       <module
             analysis_module="org.eclipse.tracecompass.incubator.concurrentcallstack.core.SpanFlameAnalysis"
+            applies_experiment="false"
             id="org.eclipse.tracecompass.incubator.concurrentcallstack.callstack"
             name="ConcurrentLttngUstCallStack">
                      <tracetype

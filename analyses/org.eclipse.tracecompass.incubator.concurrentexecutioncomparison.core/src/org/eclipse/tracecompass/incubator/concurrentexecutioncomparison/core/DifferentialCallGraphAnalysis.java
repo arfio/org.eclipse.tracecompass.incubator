@@ -59,9 +59,9 @@ public class DifferentialCallGraphAnalysis extends TmfAbstractAnalysisModule {
         }
         Collection<DifferentialWeightedTree<ICallStackSymbol>> trees;
         if (diffTree.isEmpty()) {
-            trees = WeightedTreeUtils.diffTrees(diffTree, originalTree);
+            trees = WeightedTreeUtils.diffTrees(diffTree, originalTree, "Duration");
         } else {
-            trees = WeightedTreeUtils.diffTrees(originalTree, diffTree);
+            trees = WeightedTreeUtils.diffTrees(originalTree, diffTree, "Duration");
         }
         fDifferentialCallGraphProvider = new DifferentialCallGraphProvider(provider, trees);
 

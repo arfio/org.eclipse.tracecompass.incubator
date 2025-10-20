@@ -77,8 +77,10 @@ public class SpanFlameStateProvider extends SpanCallStackStateProvider {
             funcNameContext = "funcName"; //$NON-NLS-1$
             operationName = "operation_name"; //$NON-NLS-1$
             startSpan = "start_span"; //$NON-NLS-1$
-
-            String funcName = (String) event.getContent().getField(funcNameContext).getValue();
+            String funcName = event.getContent().getFieldValue(String.class, funcNameContext);
+            if (funcName == null) {
+                return null;
+            }
 
             if (funcName.contains(startSpan)) {
 
@@ -140,8 +142,10 @@ public class SpanFlameStateProvider extends SpanCallStackStateProvider {
 
             return null;
         }
-
-        String funcName = (String) event.getContent().getField(funcNameContext).getValue();
+        String funcName = event.getContent().getFieldValue(String.class, funcNameContext);
+        if (funcName == null) {
+            return null;
+        }
         if (funcName.contains(reportSpan)) {
 
             Map<String, String> map = MessageHashMapExtractor(content);
